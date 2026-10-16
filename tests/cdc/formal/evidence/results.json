@@ -1,0 +1,38 @@
+{
+  "tool": "Yosys 0.33 (git sha1 2584903a060)",
+  "kind": "bounded safety, existential reachability, negative control",
+  "clock_model": "clk2fflogic; independent arbitrary binary clocks; no fairness",
+  "parameters": {
+    "depth": 40,
+    "cover_depth": 80,
+    "req_width": 4,
+    "rsp_width": 3,
+    "stages": 2,
+    "timeout": 120
+  },
+  "source_sha256": {
+    "rtl/common/cdc_mailbox.sv": "d4ea835db146ad46205aca4255d021b71955e8bed68459067ad0661a51541a9a",
+    "tests/cdc/formal/properties.svh": "a75a27edc337577027859bfe1cef61e44b070f22ea91ff278d7e56189dee3ec3",
+    "tests/cdc/formal/run.py": "5f5c7ddf9d813f5c38a35adf4df9b9f80ce1f36b53e0e8fe000b49ad155c7d07"
+  },
+  "targets": [
+    {
+      "name": "safety",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 39.18
+    },
+    {
+      "name": "cover_two_roundtrips_and_stalls",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 2.48
+    },
+    {
+      "name": "negative_corrupt_request",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.97
+    }
+  ]
+}

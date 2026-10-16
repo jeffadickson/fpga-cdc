@@ -1,0 +1,13 @@
+{
+  "tool": "Verilator 5.020",
+  "command": "python3 tests/cdc/run.py",
+  "source_sha256": {
+    "rtl/common/cdc_mailbox.sv": "d4ea835db146ad46205aca4255d021b71955e8bed68459067ad0661a51541a9a",
+    "tests/cdc/tb_cdc_mailbox.sv": "3f3a16c126d4895225d81e04ceaccb11148d70c86c440dae8272ff83ed0707d2",
+    "tests/cdc/run.py": "caa7b1c313d12fd020bf2c690cbe35b0b7d2fea9a3a8020cbf006b41981e4cde"
+  },
+  "completed_transactions": 243,
+  "aborted_requests": 3,
+  "formal_proof": false,
+  "vivado_constraints_validated": false
+}

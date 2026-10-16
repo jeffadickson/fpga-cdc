@@ -1,0 +1,241 @@
+{
+  "kind": "bounded formal matrix; existential covers and fault detection",
+  "safety_global_steps": 40,
+  "cover_global_steps": 112,
+  "configurations": [
+    {
+      "name": "req1-rsp1-sync2",
+      "parameters": {
+        "depth": 40,
+        "cover_depth": 112,
+        "req_width": 1,
+        "rsp_width": 1,
+        "stages": 2,
+        "timeout": 120,
+        "matrix": false,
+        "out": "build/cdc-mailbox-formal-expanded/req1-rsp1-sync2"
+      },
+      "effective_checks": [
+        {
+          "name": "safety",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 16.94
+        },
+        {
+          "name": "cover_two_roundtrips_and_stalls",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 4.88
+        },
+        {
+          "name": "cover_reset_in_transit",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 2.82
+        },
+        {
+          "name": "cover_reset_at_destination",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 3.15
+        },
+        {
+          "name": "cover_reset_at_response",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 3.25
+        },
+        {
+          "name": "cover_four_roundtrips",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 13.19
+        },
+        {
+          "name": "negative_corrupt_request",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 1.0
+        },
+        {
+          "name": "negative_corrupt_response",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 0.96
+        },
+        {
+          "name": "negative_early_ack",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 0.93
+        },
+        {
+          "name": "negative_drop_stalled_response",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 2.19
+        }
+      ]
+    },
+    {
+      "name": "req32-rsp16-sync3",
+      "parameters": {
+        "depth": 40,
+        "cover_depth": 112,
+        "req_width": 32,
+        "rsp_width": 16,
+        "stages": 3,
+        "timeout": 120,
+        "matrix": false,
+        "out": "build/cdc-mailbox-formal-expanded/req32-rsp16-sync3"
+      },
+      "effective_checks": [
+        {
+          "name": "safety",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": null,
+          "retry": {
+            "timeout_seconds": 300,
+            "cpu_user_seconds": 270.65,
+            "script": "safety-retry.ys",
+            "log": "safety-retry.log",
+            "original_attempt": "safety.log: timed out at 120 seconds"
+          }
+        },
+        {
+          "name": "cover_two_roundtrips_and_stalls",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 23.1
+        },
+        {
+          "name": "cover_reset_in_transit",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 11.48
+        },
+        {
+          "name": "cover_reset_at_destination",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 14.92
+        },
+        {
+          "name": "cover_reset_at_response",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 15.27
+        },
+        {
+          "name": "cover_four_roundtrips",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 27.36
+        },
+        {
+          "name": "negative_corrupt_request",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 4.75
+        },
+        {
+          "name": "negative_corrupt_response",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 7.24
+        },
+        {
+          "name": "negative_early_ack",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 4.01
+        },
+        {
+          "name": "negative_drop_stalled_response",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 17.17
+        }
+      ]
+    },
+    {
+      "name": "req4-rsp3-sync2",
+      "parameters": {
+        "depth": 40,
+        "cover_depth": 112,
+        "req_width": 4,
+        "rsp_width": 3,
+        "stages": 2,
+        "timeout": 120,
+        "matrix": false,
+        "out": "build/cdc-mailbox-formal-expanded/req4-rsp3-sync2"
+      },
+      "effective_checks": [
+        {
+          "name": "safety",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 44.58
+        },
+        {
+          "name": "cover_two_roundtrips_and_stalls",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 3.73
+        },
+        {
+          "name": "cover_reset_in_transit",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 3.37
+        },
+        {
+          "name": "cover_reset_at_destination",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 3.77
+        },
+        {
+          "name": "cover_reset_at_response",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 3.57
+        },
+        {
+          "name": "cover_four_roundtrips",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 9.47
+        },
+        {
+          "name": "negative_corrupt_request",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 1.19
+        },
+        {
+          "name": "negative_corrupt_response",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 1.27
+        },
+        {
+          "name": "negative_early_ack",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 1.28
+        },
+        {
+          "name": "negative_drop_stalled_response",
+          "status": "PASS",
+          "returncode": 0,
+          "seconds": 2.02
+        }
+      ]
+    }
+  ],
+  "passed_checks": 30,
+  "original_timeout_preserved": true
+}

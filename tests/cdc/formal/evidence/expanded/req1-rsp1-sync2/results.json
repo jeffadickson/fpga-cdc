@@ -1,0 +1,82 @@
+{
+  "tool": "Yosys 0.33 (git sha1 2584903a060)",
+  "kind": "bounded safety, existential reachability, negative control",
+  "clock_model": "clk2fflogic; independent arbitrary binary clocks; no fairness",
+  "parameters": {
+    "depth": 40,
+    "cover_depth": 112,
+    "req_width": 1,
+    "rsp_width": 1,
+    "stages": 2,
+    "timeout": 120,
+    "matrix": false,
+    "out": "build/cdc-mailbox-formal-expanded/req1-rsp1-sync2"
+  },
+  "source_sha256": {
+    "rtl/common/cdc_mailbox.sv": "d4ea835db146ad46205aca4255d021b71955e8bed68459067ad0661a51541a9a",
+    "tests/cdc/formal/properties.svh": "d042131d5f9987eec25f82747078ac140603a9df035e6d3960251df105c2e567",
+    "tests/cdc/formal/run.py": "f60300364d594fc6e12f47bff01ca7d6339583e256ff8ac8d1d83ba57ba778f1"
+  },
+  "targets": [
+    {
+      "name": "safety",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 16.94
+    },
+    {
+      "name": "cover_two_roundtrips_and_stalls",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 4.88
+    },
+    {
+      "name": "cover_reset_in_transit",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 2.82
+    },
+    {
+      "name": "cover_reset_at_destination",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 3.15
+    },
+    {
+      "name": "cover_reset_at_response",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 3.25
+    },
+    {
+      "name": "cover_four_roundtrips",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 13.19
+    },
+    {
+      "name": "negative_corrupt_request",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 1.0
+    },
+    {
+      "name": "negative_corrupt_response",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.96
+    },
+    {
+      "name": "negative_early_ack",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 0.93
+    },
+    {
+      "name": "negative_drop_stalled_response",
+      "status": "PASS",
+      "returncode": 0,
+      "seconds": 2.19
+    }
+  ]
+}
