@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Counter Clock Reads 0s and 1s</title>
+<style>
+:root{--bg:#fbfbfa;--fg:#1d1d1f;--mut:#6b6b70;--line:#d9d9de;--red:#c62828;--grn:#1a7f37;--blu:#2c6fb7;--card:#fff;--amb:#b35900;--tint:rgba(190,190,190,.18)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#141416;--fg:#ececef;--mut:#9a9aa3;--line:#34343a;--red:#ff6b6b;--grn:#5fd38a;--blu:#7fb2ea;--card:#1c1c20;--amb:#ffb267;--tint:rgba(160,160,170,.16)}}
+:root[data-theme="dark"]{--bg:#141416;--fg:#ececef;--mut:#9a9aa3;--line:#34343a;--red:#ff6b6b;--grn:#5fd38a;--blu:#7fb2ea;--card:#1c1c20;--amb:#ffb267;--tint:rgba(160,160,170,.16)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:960px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:4px 0 8px}
+p{margin:6px 0}.mut{color:var(--mut)}.note{font-size:13px;color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:12px 0}
+canvas{width:100%;height:auto;display:block}
+.ctl{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:6px 0}
+button{font:inherit;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+button[aria-pressed="true"]{background:var(--blu);border-color:var(--blu);color:#fff}
+label{font-size:14px}
+input[type=range]{width:200px;vertical-align:middle}
+table{border-collapse:collapse;width:100%;margin-top:8px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 4px;text-align:center;border-bottom:1px solid var(--line);font-size:15px}
+th:first-child,td:first-child{text-align:left;color:var(--mut);font-size:13px;white-space:nowrap}
+td.b{font-weight:600}
+td.ok{color:var(--grn)} td.bad{color:var(--red);background:var(--tint)}
+.dec td{font-size:17px;font-weight:700}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:10px}
+.kpi div{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.kpi b{font-size:19px;display:block;font-variant-numeric:tabular-nums}
+.bad-t{color:var(--red)}.ok-t{color:var(--grn)}
+</style></head>
+<body><main>
+<h1>What the counter clock actually sees</h1>
+<p class="mut">The bus is a 4-bit count from another domain. Each bit switches at its own time, and a bit can toggle several times before it settles. The counter's clock samples every bit at each rising edge and reads whatever 0 or 1 is there at that instant.</p>
+
+<div class="card">
+<div class="ctl" role="group" aria-label="Transition">
+<span class="mut">Count:</span>
+<button data-t="0" aria-pressed="false">0 → 1</button>
+<button data-t="3" aria-pressed="false">3 → 4</button>
+<button data-t="7" aria-pressed="true">7 → 8</button>
+<button data-t="15" aria-pressed="false">15 → 0</button>
+</div>
+<div class="ctl" role="group" aria-label="Encoding">
+<span class="mut">Encoding:</span>
+<button data-m="bin" aria-pressed="true">Binary</button>
+<button data-m="gray" aria-pressed="false">Gray</button>
+<label><input type="checkbox" id="bounce" checked> Multiple toggles (ringing / metastable bits)</label>
+</div>
+<div class="ctl">
+<label for="skew">Bit-to-bit skew: <b id="skv"></b> ps</label><input id="skew" type="range" min="0" max="400" step="10" value="200">
+<label for="per">Counter clock period: <b id="pv"></b> ps</label><input id="per" type="range" min="150" max="600" step="10" value="300">
+</div>
+<canvas id="tl" width="900" height="330" aria-label="Bit waveforms with counter clock samples"></canvas>
+<table id="grid" aria-label="Sampled bits at each clock edge"></table>
+<div class="ctl"><button id="again">New random run</button><span class="note" id="runtxt"></span></div>
+</div>
+
+<div class="card">
+<h2 style="margin-top:0">Across 4,000 runs</h2>
+<div class="kpi" id="kpi"></div>
+<p class="note">A run places the transition at a random point relative to the clock, draws each bit's skew, and adds toggles where bounce is on. "Jump" means a clock edge read a value that is neither the old count nor the new one.</p>
+</div>
+
+<div class="card">
+<h2 style="margin-top:0">Reading it</h2>
+<p>Each column is one rising clock edge. The four 0/1 values in that column are what the counter sees at that instant. When an edge lands while bits are still moving, some bits have already switched and others have not, so the column combines old and new bits. With multiple toggles, a bit can read 1, 0, 1 across successive edges, so the same count can appear several times with different values.</p>
+<p>With Gray code and one clean switch per bit, the only values a column can show are the old count and the new count, so there is no jump. Toggle the multiple-toggle option on and Gray code still jumps: a glitch on a bit that should not change, or a bit that toggles three times, can produce a code that is not adjacent to the old one. Gray code limits the damage; it does not remove the need for a synchronizer.</p>
+</div>
+</main>
+<script>
+const SAMPLES=4000;
+let tOld=7, mode='bin', skew=200, clkPs=300, bounceOn=true, seed=7;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C=()=>({fg:css('--fg'),mut:css('--mut'),line:css('--line'),red:css('--red'),grn:css('--grn'),blu:css('--blu'),amb:css('--amb'),tint:css('--tint')});
+
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function code(n){return mode==='gray'?(n^(n>>1)):n;}
+function grayToBin(g){let b=g;for(let s=g>>1;s;s>>=1)b^=s;return b;}
+function decodeCode(c){return mode==='gray'?grayToBin(c):c;}
+
+// Each bit: initial value and a sorted list of toggle times (ps). Value at t = init XOR (toggles <= t) parity.
+function makeRun(rng){
+  const oldC=code(tOld), newC=code((tOld+1)%16);
+  const S=skew, W=bounceOn?150:0;
+  const bits=[];
+  for(let k=0;k<4;k++){
+    const ob=(oldC>>k)&1, nb=(newC>>k)&1, changing=ob!==nb;
+    const s=rng()*S;
+    let m;
+    if(changing) m = bounceOn && rng()<0.5 ? 3 : 1;      // odd count so the bit ends at its new value
+    else m = bounceOn && rng()<0.3 ? 2 : 0;              // even count: a glitch that returns to the same value
+    const times=[];
+    for(let j=0;j<m;j++) times.push(s + (m===1?0:rng()*W));
+    times.sort((a,b)=>a-b);
+    bits.push({init:ob, toggles:times, changing, start:s});
+  }
+  const phase=rng()*clkPs;
+  return {oldC,newC,bits,phase};
+}
+function valueAt(bit,t){ let n=0; for(const x of bit.toggles){ if(x<=t) n++; } return (bit.init ^ (n&1)); }
+
+// Edges to display: those inside [t0,t1]
+function edgesIn(run,t0,t1){
+  const out=[]; let j=Math.ceil((t0-run.phase)/clkPs);
+  for(;;){ const t=run.phase+j*clkPs; if(t>t1) break; if(t>=t0) out.push(t); j++; }
+  return out;
+}
+
+function sampleEdge(run,t){
+  const bits=[0,1,2,3].map(k=>valueAt(run.bits[k],t));   // bits[k] is bit k (LSB first)
+  let c=0; for(let k=0;k<4;k++) c|=bits[k]<<k;
+  return {bits, code:c, dec:decodeCode(c)};
+}
+
+function legal(dec){ return dec===tOld || dec===(tOld+1)%16; }
+
+function drawRun(){
+  const rng=mulberry(seed); const run=makeRun(rng);
+  const span=skew+(bounceOn?150:0);
+  const t0=-clkPs*1.2, t1=span+clkPs*1.2;
+  const edges=edgesIn(run,t0,t1);
+  const c=document.getElementById('tl'), g=c.getContext('2d'), k=C();
+  const W=c.width,H=c.height,L=70,R=20,T=10;
+  g.clearRect(0,0,W,H);
+  const x=v=>L+(W-L-R)*(v-t0)/(t1-t0);
+  const names=['b3','b2','b1','b0'];
+  const rowTop=[60,130,200,270], rowH=40;
+  // transition window shading
+  g.fillStyle=k.tint; g.fillRect(x(0),T,x(span)-x(0),H-T-22);
+  // clock
+  g.strokeStyle=k.mut; g.fillStyle=k.mut; g.font='12px system-ui'; g.lineWidth=1.5;
+  const half=clkPs/2, yL=l=>l?22:34;
+  let m0=Math.ceil((t0-run.phase)/half);
+  let lvl=(((m0-1)%2)+2)%2===0 ? 1 : 0;      // rising edges sit at even boundaries
+  g.beginPath(); g.moveTo(x(t0), yL(lvl));
+  for(let m=m0;;m++){
+    const tb=run.phase+m*half; if(tb>t1) break;
+    g.lineTo(x(tb), yL(lvl));
+    lvl = (m%2===0) ? 1 : 0;
+    g.lineTo(x(tb), yL(lvl));
+  }
+  g.lineTo(x(t1), yL(lvl)); g.stroke();
+  g.fillText('clk',14,30);
+  // bit traces
+  for(let r=0;r<4;r++){
+    const kb=3-r; const bit=run.bits[kb];
+    const yv=b=> rowTop[r] + (b?0:rowH-14);   // 1 = high (top), 0 = low
+    g.fillStyle=k.mut; g.fillText(names[r],14,rowTop[r]+rowH/2);
+    g.strokeStyle=k.blu; g.lineWidth=2.2; g.beginPath();
+    let v=bit.init; let px=x(t0); g.moveTo(px,yv(v));
+    const events=[...bit.toggles];
+    for(const te of events){ g.lineTo(x(te),yv(v)); v^=1; g.lineTo(x(te),yv(v)); }
+    g.lineTo(x(t1),yv(v)); g.stroke();
+  }
+  // sample lines and sampled dots
+  for(const te of edges){
+    g.strokeStyle=k.red; g.lineWidth=1.5; g.setLineDash([4,4]);
+    g.beginPath(); g.moveTo(x(te),T); g.lineTo(x(te),H-22); g.stroke(); g.setLineDash([]);
+    for(let r=0;r<4;r++){
+      const v=valueAt(run.bits[3-r],te);
+      g.fillStyle=k.red; g.beginPath(); g.arc(x(te), yv_(r,v), 4, 0, 7); g.fill();
+    }
+  }
+  function yv_(r,b){ return rowTop[r] + (b?0:rowH-14); }
+  g.fillStyle=k.mut; g.fillText('0 ps',x(0)-6,H-6); g.fillText(Math.round(span)+' ps',x(span)-18,H-6);
+
+  // grid below: rows = bits, columns = edges
+  const tbl=document.getElementById('grid');
+  let html='<thead><tr><th>clock edge</th>'+edges.map((t,i)=>`<th>${i+1}</th>`).join('')+'</tr></thead><tbody>';
+  const samples=edges.map(t=>sampleEdge(run,t));
+  for(let r=0;r<4;r++){
+    const kb=3-r;
+    html+=`<tr><td>${names[r]}</td>`+samples.map(s=>`<td class="b">${s.bits[kb]}</td>`).join('')+'</tr>';
+  }
+  html+='<tr class="dec"><td>read value</td>'+samples.map(s=>{
+      const ok=legal(s.dec); return `<td class="${ok?'ok':'bad'}">${s.dec}</td>`; }).join('')+'</tr>';
+  html+='<tr><td>status</td>'+samples.map(s=>legal(s.dec)?'<td class="ok">ok</td>':'<td class="bad">jump</td>').join('')+'</tr></tbody>';
+  tbl.innerHTML=html;
+
+  const jumps=samples.filter(s=>!legal(s.dec)).length;
+  document.getElementById('runtxt').innerHTML=
+    `Transition ${tOld} → ${(tOld+1)%16}. Clock edges shown: ${edges.length}. `+
+    (jumps? `<span class="bad-t">${jumps} edge(s) read a jump.</span>` : `<span class="ok-t">No jumps in this run.</span>`);
+}
+
+function runStats(){
+  const rng=mulberry(4242); let runsWithJump=0, edgesTotal=0, edgesJump=0, worst=0, worstVal=null;
+  for(let i=0;i<SAMPLES;i++){
+    const run=makeRun(rng);
+    const span=skew+(bounceOn?150:0);
+    const edges=edgesIn(run,-clkPs*1.2,span+clkPs*1.2);
+    let any=false;
+    for(const te of edges){
+      const s=sampleEdge(run,te); edgesTotal++;
+      if(!legal(s.dec)){ edgesJump++; any=true;
+        const d=Math.min(Math.abs(s.dec-tOld),Math.abs(s.dec-(tOld+1)%16));
+        if(d>worst){worst=d; worstVal=s.dec;} }
+    }
+    if(any) runsWithJump++;
+  }
+  return {runsWithJump, edgesTotal, edgesJump, worst, worstVal};
+}
+function drawKpi(){
+  const st=runStats();
+  document.getElementById('kpi').innerHTML=`
+   <div>Runs with a jump<b class="${st.runsWithJump?'bad-t':'ok-t'}">${(100*st.runsWithJump/SAMPLES).toFixed(1)}%</b></div>
+   <div>Clock edges that read a jump<b class="${st.edgesJump?'bad-t':'ok-t'}">${(100*st.edgesJump/st.edgesTotal).toFixed(1)}%</b></div>
+   <div>Worst read<b>${st.worstVal===null?'none':st.worstVal+' ('+st.worst+' away)'}</b></div>
+   <div>Settings<b>${mode==='gray'?'Gray':'Binary'} · skew ${skew} ps · ${bounceOn?'toggles on':'toggles off'}</b></div>`;
+}
+function refresh(){ drawRun(); drawKpi(); }
+function setT(t){tOld=t; document.querySelectorAll('[data-t]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.t===t?'true':'false')); refresh();}
+function setM(m){mode=m; document.querySelectorAll('[data-m]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===m?'true':'false')); refresh();}
+document.querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',()=>setT(+b.dataset.t)));
+document.querySelectorAll('[data-m]').forEach(b=>b.addEventListener('click',()=>setM(b.dataset.m)));
+document.getElementById('bounce').addEventListener('change',e=>{bounceOn=e.target.checked; refresh();});
+document.getElementById('skew').addEventListener('input',e=>{skew=+e.target.value; document.getElementById('skv').textContent=skew; refresh();});
+document.getElementById('per').addEventListener('input',e=>{clkPs=+e.target.value; document.getElementById('pv').textContent=clkPs; refresh();});
+document.getElementById('again').addEventListener('click',()=>{seed=Math.floor(Math.random()*1e9); drawRun();});
+window.addEventListener('resize',refresh);
+document.getElementById('skv').textContent=skew; document.getElementById('pv').textContent=clkPs;
+refresh();
+</script>
+</main></body></html>
